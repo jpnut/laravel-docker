@@ -1,0 +1,67 @@
+version: "3.7"
+
+services:
+
+  #PHP Service
+  workspace:
+    build:
+      args:
+        user: homestead
+        uid: 1000
+      context: ./workspace
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ${WORKING_DIR}/:/var/www
+    networks:
+      - app-network
+
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ${WORKING_DIR}:/var/www
+      - ./nginx:/etc/nginx/conf.d
+    networks:
+      - app-network
+
+  #Postgres Service
+  postgres:
+    build:
+      context: ./postgres
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./postgres:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+  #MySQL Service
+  mysql:
+    image: mysql
+    restart: unless-stopped
+    ports:
+      - "${MYSQL_PORT}:3306"
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DB}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_PASSWORD}
+    volumes:
+      - ./mysql:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
